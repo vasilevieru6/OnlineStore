@@ -47,6 +47,8 @@ namespace OnlineShop.Api
             services.AddAutoMapper();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICartService, CartService>();
+            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IRepository, Repository>();
             services.AddCors();
         }

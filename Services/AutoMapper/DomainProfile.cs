@@ -12,6 +12,9 @@ namespace OnlineShop.Services.AutoMapper
             CreateMap<Product, ProductViewModel>();
             CreateMap<ProductViewModel, Product>();
             CreateMap<QuantityCartItemViewModel, ShoppingCartItem>();
+            CreateMap<AddressViewModel, Address>().ReverseMap();
+            CreateMap<OrderViewModel, Order>();
+            
         }
     }
 }

@@ -26,9 +26,9 @@ namespace OnlineShop.Api.Controllers
         private long UserId => long.Parse(User.FindFirstValue("sub"));
 
         [HttpGet("products")]        
-        public IList<CartItemViewModel> GetAllProducts()
+        public IList<CartItemViewModel> Get()
         {      
-            return _cartService.GetAllProducts(this.UserId);
+            return _cartService.GetAllProducts();
         }
 
         [HttpPatch("cartItem/{id}")]

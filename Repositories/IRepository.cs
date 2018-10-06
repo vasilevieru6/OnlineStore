@@ -10,5 +10,6 @@ namespace OnlineShop.Repositories
         void Add<T>(T entity) where T : Entity;
         void Update<T>(T entity) where T : Entity;
         void Delete<T>(T entity) where T : Entity;
+        void Save();
     }
 }

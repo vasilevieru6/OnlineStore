@@ -77,13 +77,6 @@ namespace OnlineShop.Api.Controllers
             return Json(product);
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
         //POST api/values
         [HttpPost]
         [Authorize(Roles = "Admin")]
@@ -92,12 +85,6 @@ namespace OnlineShop.Api.Controllers
             var product = _mapper.Map<ProductViewModel, Product>(productViewModel);
             _productService.CreateProduct(product);
             return Json(productViewModel);
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
-        {
         }
 
         // DELETE api/values/5

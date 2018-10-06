@@ -6,11 +6,13 @@ namespace OnlineShop.Services
 {
     public interface ICartService
     {
-        IList<CartItemViewModel> GetAllProducts(long id);
+        IList<CartItemViewModel> GetAllProducts();
         void UpdateCartItemQuantity(QuantityCartItemViewModel cartItem);
         void AddProductToCart(QuantityCartItemViewModel cartItem, long id);
         PagedViewModel<CartItemViewModel> GetProducts(int pageNumber, int pageSize, long id);
         int GetCartProductPrice(long id);
         void DeleteCartProduct(long id);
+        int GetTotalAmount(long id);
+        void DeleteAllProductsFromCart(long userId);
     }
 }

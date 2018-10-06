@@ -16,13 +16,6 @@ namespace OnlineShop.Models.Configurations
                     v => v.ToString(),
                     v => (OrderStatus)Enum.Parse(typeof(OrderStatus), v));
 
-            builder.Property(x => x.Number)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            builder.Property(x => x.Description)
-                .HasMaxLength(1000);
-
             builder.Property(x => x.OrderDate)
                 .IsRequired();
 

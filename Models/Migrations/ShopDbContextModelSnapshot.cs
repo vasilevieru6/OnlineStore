@@ -147,13 +147,11 @@ namespace OnlineShop.Models.Migrations
                         .IsRequired()
                         .HasMaxLength(50);
 
-                    b.Property<string>("UserId");
-
-                    b.Property<long?>("UserId1");
+                    b.Property<long>("UserId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Addresses");
                 });
@@ -165,13 +163,6 @@ namespace OnlineShop.Models.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<long>("AddressId");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("Number")
-                        .IsRequired()
-                        .HasMaxLength(20);
 
                     b.Property<DateTime>("OrderDate");
 
@@ -416,7 +407,8 @@ namespace OnlineShop.Models.Migrations
                 {
                     b.HasOne("OnlineShop.Models.Domain.User", "User")
                         .WithMany("Addresses")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("OnlineShop.Models.Domain.Order", b =>

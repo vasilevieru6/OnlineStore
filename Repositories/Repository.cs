@@ -18,13 +18,13 @@ namespace OnlineShop.Repositories
         public void Add<T>(T entity) where T : Entity
         {
             context.Set<T>().Add(entity);
-            context.SaveChanges();
+            //context.SaveChanges();
         }
 
         public void Delete<T>(T entity) where T : Entity
         {
             context.Set<T>().Remove(entity);
-            context.SaveChanges();
+            //context.SaveChanges();
         }
 
         public IQueryable<T> GetAll<T>() where T : Entity
@@ -37,11 +37,16 @@ namespace OnlineShop.Repositories
             return context.Find<T>(id);
         }
 
+        public void Save()
+        {
+            context.SaveChanges();
+        }
+
         public void Update<T>(T entity) where T : Entity
         {
             context.Attach(entity);
             context.Entry(entity).State = EntityState.Modified;
-            context.SaveChanges();
+            //context.SaveChanges();
         }
     }
 }

@@ -117,6 +117,7 @@ namespace OnlineShop.Services
         public void CreateProduct(Product product)
         {
             _repository.Add(product);
+            _repository.Save();
         }
         
         public PagedViewModel<ProductViewModel> GetProducts(int pageNumber, int pageSize)
@@ -145,11 +146,13 @@ namespace OnlineShop.Services
         {
             var product = _repository.GetById<Product>(id);
             _repository.Delete(product);
+            _repository.Save();
         }
 
         public void UpdateProduct(Product product)
         {
             _repository.Update(product);
+            _repository.Save();
         }
     }
 }

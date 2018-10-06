@@ -10,7 +10,6 @@ namespace OnlineShop.Services
 {
     public class CartService : ICartService
     {
-
         private IRepository _repository;
         private readonly IMapper mapper;
 
@@ -20,8 +19,7 @@ namespace OnlineShop.Services
             this.mapper = mapper;
         }
 
-
-        public IList<CartItemViewModel> GetAllProducts(long id)
+        public IList<CartItemViewModel> GetAllProducts()
         {
             IQueryable<ShoppingCartItem> shoppingCartItem = _repository.GetAll<ShoppingCartItem>();
 
@@ -39,10 +37,10 @@ namespace OnlineShop.Services
                 .ToList();
         }
 
-        public PagedViewModel<CartItemViewModel> GetProducts(int pageNumber, int pageSize, long id)
+        public PagedViewModel<CartItemViewModel> GetProducts(int pageNumber, int pageSize, long userId)
         {
             IQueryable<ShoppingCartItem> queryable = _repository.GetAll<ShoppingCartItem>()
-                        .Where(x => x.ShoppingCart.UserId == id);
+                        .Where(x => x.ShoppingCart.UserId == userId);
 
             var count = queryable.Count();
 
@@ -62,24 +60,37 @@ namespace OnlineShop.Services
             return result;
         }
 
-
-
         public void UpdateCartItemQuantity(QuantityCartItemViewModel cartItem)
         {
             var item = _repository.GetById<ShoppingCartItem>(cartItem.Id);
             item.Quantity = cartItem.Quantity;
             _repository.Update(item);
+            _repository.Save();
         }
 
-        public int GetCartProductPrice(long id)
+        public int GetTotalAmount(long userId)
         {
-            return _repository.GetAll<ShoppingCartItem>().Where(x => x.ShoppingCart.UserId == id).Select(x => x.Product.UnitPrice).FirstOrDefault();
+            var shoppingCart = _repository.GetAll<ShoppingCart>()
+                .Where(x => x.UserId == userId)
+                .FirstOrDefault();
+
+            return _repository.GetAll<ShoppingCartItem>()
+                .Where(x => x.ShoppingCartId == shoppingCart.Id)
+                .Sum(x => x.Quantity * x.Product.UnitPrice);
         }
 
-        public void AddProductToCart(QuantityCartItemViewModel cartItem, long id)
+        public int GetCartProductPrice(long userId)
+        {
+            return _repository.GetAll<ShoppingCartItem>()
+                .Where(x => x.ShoppingCart.UserId == userId)
+                .Select(x => x.Product.UnitPrice)
+                .FirstOrDefault();
+        }
+
+        public void AddProductToCart(QuantityCartItemViewModel cartItem, long userId)
         {
             var currentUserCart = _repository.GetAll<ShoppingCart>()
-                .Where(x => x.UserId == id)
+                .Where(x => x.UserId == userId)
                 .Select(x => x.Id)
                 .FirstOrDefault();
 
@@ -91,20 +102,38 @@ namespace OnlineShop.Services
             {
                 item.Quantity++;
                 _repository.Update(item);
+                _repository.Save();
             }
             else
             {
                 item = mapper.Map<ShoppingCartItem>(cartItem);
                 item.ShoppingCartId = currentUserCart;
                 _repository.Add(item);
+                _repository.Save();
             }
-
         }
 
-        public void DeleteCartProduct(long id)
+        public void DeleteCartProduct(long cartItemId)
         {
-            var cartItem = _repository.GetById<ShoppingCartItem>(id);
+            var cartItem = _repository.GetById<ShoppingCartItem>(cartItemId);
             _repository.Delete(cartItem);
+            _repository.Save();
+        }
+
+
+        public void DeleteAllProductsFromCart(long userId)
+        {
+            var cart = _repository.GetAll<ShoppingCart>()
+                .Where(x => x.UserId == userId)
+                .FirstOrDefault();
+
+            var cartItems = _repository.GetAll<ShoppingCartItem>().Where(x => x.ShoppingCartId == cart.Id);
+
+            foreach (var item in cartItems)
+            {
+                _repository.Delete(item);
+            }
+            _repository.Save();
         }
     }
 }
