@@ -9,12 +9,13 @@ namespace OnlineShop.Services
         IEnumerable<CategoryAndSubCategoryViewModel> GetProductCategoriesAndSubCategories();
         IList<ProductViewModel> GetInfoAboutProducts(string category, string subCategory);
         IList<ProductViewModel> GetAllProducts();
-        void CreateProduct(Product product);
+        void CreateProduct(ProductViewModel productViewModel);
         IEnumerable<CategoryViewModel> GetProductCategories(string category);
         IEnumerable<SubCategoryViewModel> GetProductSubCategories(string subCategory);
         PagedViewModel<ProductViewModel> GetProducts(int pageNumber, int pageSize);
         void DeleteProduct(long id);
-        void UpdateProduct(Product product);
+        void UpdateProduct(ProductViewModel productViewModel);
         PagedViewModel<ProductViewModel> GetInfoAboutProductsOnPage(string category, string subCategory, int pageNumber, int pageSize);
+        PagedViewModel<ProductViewModel> GetMostShippedProducts(int pageNumber, int pageSize);
     }
 }

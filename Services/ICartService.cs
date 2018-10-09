@@ -9,7 +9,6 @@ namespace OnlineShop.Services
         IList<CartItemViewModel> GetAllProducts();
         void UpdateCartItemQuantity(QuantityCartItemViewModel cartItem);
         void AddProductToCart(QuantityCartItemViewModel cartItem, long id);
-        PagedViewModel<CartItemViewModel> GetProducts(int pageNumber, int pageSize, long id);
         int GetCartProductPrice(long id);
         void DeleteCartProduct(long id);
         int GetTotalAmount(long id);

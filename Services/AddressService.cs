@@ -6,6 +6,7 @@ using OnlineShop.Models.Domain;
 using OnlineShop.Repositories;
 using OnlineShop.Services.ViewMoldels;
 using System.Linq;
+using AutoMapper.QueryableExtensions;
 
 namespace OnlineShop.Services
 {
@@ -30,17 +31,12 @@ namespace OnlineShop.Services
 
         public IEnumerable<AddressViewModel> GetAddresses(long id)
         {
-            var addresses = _repository.GetAll<Address>().Where(x => x.UserId == id);
+            var addresses = _repository.GetAll<Address>()
+                .Where(x => x.UserId == id);
 
-            return addresses.Select(x => new AddressViewModel
-            {
-                Id = x.Id,
-                Country = x.Country,
-                City = x.City,
-                Street = x.Street,
-                PostalCode = x.PostalCode
-            }).ToList(); 
-            
+            return addresses
+                .ProjectTo<AddressViewModel>(_mapper.ConfigurationProvider)
+                .ToList();             
         }
     }
 }

@@ -52,26 +52,22 @@ namespace IdentityServer4.Quickstart.UI
             _events = events;
         }
 
-        /// <summary>
-        /// Show login page
-        /// </summary>
-        /// 
         [HttpGet]
-        public IActionResult Register()
+        public IActionResult Register(string returnUrl)
         {
-            return View();
+            RegistrationViewModel registrationViewModel = new RegistrationViewModel();
+            registrationViewModel.ReturnUrl = returnUrl;
+            return View(registrationViewModel);
         }
 
 
         [HttpGet]
         public async Task<IActionResult> Login(string returnUrl)
         {
-            // build a model so we know what to show on the login page
             var vm = await BuildLoginViewModelAsync(returnUrl);
-            
+
             if (vm.IsExternalLoginOnly)
             {
-                // we only have one option for logging in and it's an external provider
                 return await ExternalLogin(vm.ExternalLoginScheme, returnUrl);
             }
 
@@ -81,25 +77,26 @@ namespace IdentityServer4.Quickstart.UI
         [HttpPost]
         public async Task<IActionResult> Register(RegistrationViewModel model)
         {
+            IdentityResult result;
             if (ModelState.IsValid)
             {
-
                 var user = _userManager.FindByNameAsync(model.UserName).Result;
                 if (user == null)
                 {
                     user = new User { FirstName = model.FirstName, LastName = model.LastName, UserName = model.UserName, Email = model.Email };
                     user.Cart = new ShoppingCart();
 
-                    var result = await _userManager.CreateAsync(user, model.Password);
-                    
+
+                    result = await _userManager.CreateAsync(user, model.Password);
+
                     if (!result.Succeeded)
                     {
                         throw new Exception(result.Errors.First().Description);
                     }
-                    
+
                     await _userManager.AddToRoleAsync(user, "Customer");
 
-                    Console.WriteLine("User Created");         
+                    Console.WriteLine("User Created");
                 }
                 else
                 {
@@ -107,21 +104,29 @@ namespace IdentityServer4.Quickstart.UI
                 }
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
+
+
+                await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserName, user.Id.ToString(), user.UserName));
+
+                if (_interaction.IsValidReturnUrl(model.ReturnUrl) || Url.IsLocalUrl(model.ReturnUrl))
+                {
+                    return Redirect(model.ReturnUrl);
+                }
+
+                return Redirect("~/");
             }
             else
             {
                 return View(model);
             }
-            return RedirectToAction("Login");
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginInputModel model, string button)
         {
             if (button != "login")
             {
-                // the user clicked the "cancel" button
                 var context = await _interaction.GetAuthorizationContextAsync(model.ReturnUrl);
                 if (context != null)
                 {
@@ -156,7 +161,6 @@ namespace IdentityServer4.Quickstart.UI
                 ModelState.AddModelError("", AccountOptions.InvalidCredentialsErrorMessage);
             }
 
-            // something went wrong, show form with error
             var vm = await BuildLoginViewModelAsync(model);
             return View(vm);
         }
@@ -166,12 +170,10 @@ namespace IdentityServer4.Quickstart.UI
         {
             if (AccountOptions.WindowsAuthenticationSchemeName == provider)
             {
-                // windows authentication needs special handling
                 return await ProcessWindowsLoginAsync(returnUrl);
             }
             else
             {
-                // start challenge and roundtrip the return URL and 
                 var props = new AuthenticationProperties()
                 {
                     RedirectUri = Url.Action("ExternalLoginCallback"),
@@ -185,52 +187,11 @@ namespace IdentityServer4.Quickstart.UI
             }
         }
 
-        //[HttpGet]
-        //public async Task<IActionResult> ExternalLoginCallback()
-        //{
-        //    // read external identity from the temporary cookie
-        //    var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-        //    if (result?.Succeeded != true)
-        //    {
-        //        throw new Exception("External authentication error");
-        //    }
 
-        //    // lookup our user and external provider info
-        //    var (user, provider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
-        //    if (user == null)
-        //    {
-        //        user = await AutoProvisionUserAsync(provider, providerUserId, claims);
-        //    }
-
-        //    var additionalLocalClaims = new List<Claim>();
-        //    var localSignInProps = new AuthenticationProperties();
-        //    ProcessLoginCallbackForOidc(result, additionalLocalClaims, localSignInProps);
-        //    ProcessLoginCallbackForWsFed(result, additionalLocalClaims, localSignInProps);
-        //    ProcessLoginCallbackForSaml2p(result, additionalLocalClaims, localSignInProps);
-
-        //    var principal = await _signInManager.CreateUserPrincipalAsync(user);
-        //    additionalLocalClaims.AddRange(principal.Claims);
-        //    //var name = principal.FindFirst(JwtClaimTypes.Name)?.Value ?? user.Id;
-        //    //await _events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.Id, name));
-        //    await HttpContext.SignInAsync(user.Id, name, provider, localSignInProps, additionalLocalClaims.ToArray());
-
-        //    // delete temporary cookie used during external authentication
-        //    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-        //    // validate return URL and redirect back to authorization endpoint or a local page
-        //    var returnUrl = result.Properties.Items["returnUrl"];
-        //    if (_interaction.IsValidReturnUrl(returnUrl) || Url.IsLocalUrl(returnUrl))
-        //    {
-        //        return Redirect(returnUrl);
-        //    }
-
-        //    return Redirect("~/");
-        //}
 
         [HttpGet]
         public async Task<IActionResult> Logout(string logoutId)
         {
-            // build a model so the logout page knows what to display
             var vm = await BuildLogoutViewModelAsync(logoutId);
 
             if (vm.ShowLogoutPrompt == false)
@@ -245,15 +206,12 @@ namespace IdentityServer4.Quickstart.UI
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout(LogoutInputModel model)
         {
-            // build a model so the logged out page knows what to display
             var vm = await BuildLoggedOutViewModelAsync(model.LogoutId);
 
             if (User?.Identity.IsAuthenticated == true)
             {
-                // delete local authentication cookie
                 await _signInManager.SignOutAsync();
 
-                // raise the logout event
                 await _events.RaiseAsync(new UserLogoutSuccessEvent(User.GetSubjectId(), User.GetDisplayName()));
             }
 
@@ -276,7 +234,6 @@ namespace IdentityServer4.Quickstart.UI
             var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
             if (context?.IdP != null)
             {
-                // this is meant to short circuit the UI and only trigger the one external IdP
                 return new LoginViewModel
                 {
                     EnableLocalLogin = false,
@@ -337,7 +294,6 @@ namespace IdentityServer4.Quickstart.UI
 
             if (User?.Identity.IsAuthenticated != true)
             {
-                // if the user is not authenticated, then just show logged out page
                 vm.ShowLogoutPrompt = false;
                 return vm;
             }
@@ -345,19 +301,15 @@ namespace IdentityServer4.Quickstart.UI
             var context = await _interaction.GetLogoutContextAsync(logoutId);
             if (context?.ShowSignoutPrompt == false)
             {
-                // it's safe to automatically sign-out
                 vm.ShowLogoutPrompt = false;
                 return vm;
             }
 
-            // show the logout prompt. this prevents attacks where the user
-            // is automatically signed out by another malicious web page.
             return vm;
         }
 
         private async Task<LoggedOutViewModel> BuildLoggedOutViewModelAsync(string logoutId)
         {
-            // get context information (client name, post logout redirect URI and iframe for federated signout)
             var logout = await _interaction.GetLogoutContextAsync(logoutId);
 
             var vm = new LoggedOutViewModel
@@ -379,9 +331,6 @@ namespace IdentityServer4.Quickstart.UI
                     {
                         if (vm.LogoutId == null)
                         {
-                            // if there's no current logout context, we need to create one
-                            // this captures necessary info from the current logged in user
-                            // before we signout and redirect away to the external IdP for signout
                             vm.LogoutId = await _interaction.CreateLogoutContextAsync();
                         }
 
@@ -395,13 +344,9 @@ namespace IdentityServer4.Quickstart.UI
 
         private async Task<IActionResult> ProcessWindowsLoginAsync(string returnUrl)
         {
-            // see if windows auth has already been requested and succeeded
             var result = await HttpContext.AuthenticateAsync(AccountOptions.WindowsAuthenticationSchemeName);
             if (result?.Principal is WindowsPrincipal wp)
             {
-                // we will issue the external cookie and then redirect the
-                // user back to the external callback, in essence, tresting windows
-                // auth the same as any other external authentication mechanism
                 var props = new AuthenticationProperties()
                 {
                     RedirectUri = Url.Action("ExternalLoginCallback"),
@@ -438,90 +383,6 @@ namespace IdentityServer4.Quickstart.UI
                 // this URL is re-triggered when we call challenge
                 return Challenge(AccountOptions.WindowsAuthenticationSchemeName);
             }
-        }
-
-        private async Task<(User user, string provider, string providerUserId, IEnumerable<Claim> claims)>
-            FindUserFromExternalProviderAsync(AuthenticateResult result)
-        {
-            var externalUser = result.Principal;
-
-            // try to determine the unique id of the external user (issued by the provider)
-            // the most common claim type for that are the sub claim and the NameIdentifier
-            // depending on the external provider, some other claim type might be used
-            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
-                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
-                              throw new Exception("Unknown userid");
-
-            // remove the user id claim so we don't include it as an extra claim if/when we provision the user
-            var claims = externalUser.Claims.ToList();
-            claims.Remove(userIdClaim);
-
-            var provider = result.Properties.Items["scheme"];
-            var providerUserId = userIdClaim.Value;
-
-            // find external user
-            var user = await _userManager.FindByLoginAsync(provider, providerUserId);
-
-            return (user, provider, providerUserId, claims);
-        }
-
-        private async Task<User> AutoProvisionUserAsync(string provider, string providerUserId, IEnumerable<Claim> claims)
-        {
-            // create a list of claims that we want to transfer into our store
-            var filtered = new List<Claim>();
-
-            // user's display name
-            var name = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Name)?.Value ??
-                claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
-            if (name != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.Name, name));
-            }
-            else
-            {
-                var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ??
-                    claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
-                var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ??
-                    claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
-                if (first != null && last != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, first + " " + last));
-                }
-                else if (first != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, first));
-                }
-                else if (last != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, last));
-                }
-            }
-
-            // email
-            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ??
-               claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-            if (email != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.Email, email));
-            }
-
-            var user = new User
-            {
-                UserName = Guid.NewGuid().ToString(),
-            };
-            var identityResult = await _userManager.CreateAsync(user);
-            if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
-
-            if (filtered.Any())
-            {
-                identityResult = await _userManager.AddClaimsAsync(user, filtered);
-                if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
-            }
-
-            identityResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
-            if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
-
-            return user;
         }
 
         private void ProcessLoginCallbackForOidc(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)

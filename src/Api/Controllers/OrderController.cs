@@ -29,6 +29,11 @@ namespace OnlineShop.Api.Controllers
             return Json(orderViewModel);
         }
 
+        [HttpGet]
+        public IList<OrderInfoViewModel> Get()
+        {
+            return _orderService.GetOrders(UserId);
+        }
 
 
     }

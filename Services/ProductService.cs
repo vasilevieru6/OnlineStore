@@ -4,16 +4,20 @@ using OnlineShop.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace OnlineShop.Services
 {
     public class ProductService : IProductService
     {
         private IRepository _repository;
+        private readonly IMapper _mapper;
 
-        public ProductService(IRepository repository)
+        public ProductService(IRepository repository, IMapper mapper)
         {
             _repository = repository;
+            _mapper = mapper;
         }
 
         public IEnumerable<CategoryViewModel> GetProductCategories(string category)
@@ -23,7 +27,7 @@ namespace OnlineShop.Services
             {
                 Category = x.Category
             })
-            .Where(x=> x.Category.Contains(category))
+            .Where(x => x.Category.Contains(category))
             .Distinct()
             .ToList()
             .ToArray();
@@ -57,69 +61,45 @@ namespace OnlineShop.Services
                     Category = x.Key,
                     SubCategories = x.Select(y => y.SubCategory).ToArray()
                 })
-                .ToArray();          
+                .ToArray();
         }
 
         public IList<ProductViewModel> GetInfoAboutProducts(string category, string subCategory)
         {
-            var products = _repository.GetAll<Product>();
+            var products = _repository.GetAll<Product>();            
 
-          
-            return products
-                .Select(x => new ProductViewModel
-                {       
-                    Id = x.Id,
-                    Name = x.Name,
-                    UnitPrice = x.UnitPrice,
-                    Description = x.Description,
-                    PhotoUrl = x.PhotoUrl,
-                    Category = x.Category,
-                    SubCategory = x.SubCategory
-                }).Where(x => x.Category == category && x.SubCategory == subCategory).ToList();
+            return products    
+                .Where(x => x.Category == category && x.SubCategory == subCategory)
+                .ProjectTo<ProductViewModel>(_mapper.ConfigurationProvider)
+                .ToList();
         }
 
         public PagedViewModel<ProductViewModel> GetInfoAboutProductsOnPage(string category, string subCategory, int pageNumber, int pageSize)
         {
             var products = _repository.GetAll<Product>();
 
-
             return products
-                .Select(x => new ProductViewModel
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    UnitPrice = x.UnitPrice,
-                    Description = x.Description,
-                    PhotoUrl = x.PhotoUrl,
-                    Category = x.Category,
-                    SubCategory = x.SubCategory
-                })
                 .Where(x => x.Category == category && x.SubCategory == subCategory)
-                .Paged(pageNumber, pageSize);                
+                .ProjectTo<ProductViewModel>(_mapper.ConfigurationProvider)
+                .Paged(pageNumber, pageSize);
         }
 
         public IList<ProductViewModel> GetAllProducts()
         {
             var products = _repository.GetAll<Product>();
 
-            return products.Select(x => new ProductViewModel
-            {
-                Id = x.Id,
-                Name = x.Name,
-                UnitPrice = x.UnitPrice,
-                Description = x.Description,
-                PhotoUrl = x.PhotoUrl,
-                Category = x.Category,
-                SubCategory = x.SubCategory
-            }).ToList();
+            return products
+                .ProjectTo<ProductViewModel>(_mapper.ConfigurationProvider)                
+                .ToList();
         }
 
-        public void CreateProduct(Product product)
+        public void CreateProduct(ProductViewModel productViewModel)
         {
+            var product = _mapper.Map<ProductViewModel, Product>(productViewModel);
             _repository.Add(product);
             _repository.Save();
         }
-        
+
         public PagedViewModel<ProductViewModel> GetProducts(int pageNumber, int pageSize)
         {
             IQueryable<Product> queryable = _repository.GetAll<Product>();
@@ -127,16 +107,7 @@ namespace OnlineShop.Services
             var count = queryable.Count();
 
             var result = queryable
-                .Select(x => new ProductViewModel
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    UnitPrice = x.UnitPrice,
-                    Description = x.Description,
-                    Category = x.Category,
-                    SubCategory = x.SubCategory,
-                    PhotoUrl = x.PhotoUrl
-                })
+                .ProjectTo<ProductViewModel>(_mapper.ConfigurationProvider)
                 .Paged(pageNumber, pageSize);
 
             return result;
@@ -149,10 +120,32 @@ namespace OnlineShop.Services
             _repository.Save();
         }
 
-        public void UpdateProduct(Product product)
+        public void UpdateProduct(ProductViewModel productViewModel)
         {
+            var product = _mapper.Map<ProductViewModel, Product>(productViewModel);
             _repository.Update(product);
             _repository.Save();
+        }
+
+        public PagedViewModel<ProductViewModel> GetMostShippedProducts(int pageNumber, int pageSize)
+        {            
+            var productIds = _repository.GetAll<OrderLine>()
+                .GroupBy(x => x.ProductId)
+                .Select(x => new { count = x.Sum(y => y.Quatity), id = x.Key })
+                .OrderByDescending(x => x.count)
+                .Select(x => x.id)
+                .Take(10);
+
+            IQueryable<Product> products = _repository.GetAll<Product>()
+                .Where(x => productIds.Contains(x.Id));
+
+            var count = products.Count();
+
+            var result = products
+                .ProjectTo<ProductViewModel>(_mapper.ConfigurationProvider)
+                .Paged(pageNumber, pageSize);
+
+            return result;
         }
     }
 }

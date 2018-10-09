@@ -6,6 +6,7 @@ using OnlineShop.Models.Domain;
 using OnlineShop.Repositories;
 using OnlineShop.Services.ViewMoldels;
 using System.Linq;
+using AutoMapper.QueryableExtensions;
 
 namespace OnlineShop.Services
 {
@@ -35,8 +36,8 @@ namespace OnlineShop.Services
                     Order = order
                 };
                 _repository.Add(orderLine);
-                _repository.Save();
             }
+            _repository.Save();
         }
 
         public void Create(OrderViewModel orderViewModel, long userId)
@@ -48,6 +49,15 @@ namespace OnlineShop.Services
             order.TotalAmount = _cartService.GetTotalAmount(userId);
             CreateOrderLines(order);
             _cartService.DeleteAllProductsFromCart(userId);
+        }
+
+        public IList<OrderInfoViewModel> GetOrders(long userId)
+        {
+            var orders = _repository.GetAll<Order>().Where(x => x.UserId == userId);
+
+            return orders
+                .ProjectTo<OrderInfoViewModel>(_mapper.ConfigurationProvider)
+                .ToList();
         }
     }
 }

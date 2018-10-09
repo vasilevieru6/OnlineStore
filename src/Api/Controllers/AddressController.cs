@@ -25,7 +25,6 @@ namespace OnlineShop.Api.Controllers
         public IActionResult CreateAddress([FromBody] AddressViewModel addressViewModel)
         {
             _addressService.Create(addressViewModel, UserId);
-
             return Json(addressViewModel);
         }
 

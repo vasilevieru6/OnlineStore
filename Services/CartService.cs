@@ -5,18 +5,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace OnlineShop.Services
 {
     public class CartService : ICartService
     {
         private IRepository _repository;
-        private readonly IMapper mapper;
+        private readonly IMapper _mapper;
 
         public CartService(IRepository repository, IMapper mapper)
         {
             _repository = repository;
-            this.mapper = mapper;
+            _mapper = mapper;
         }
 
         public IList<CartItemViewModel> GetAllProducts()
@@ -24,40 +25,8 @@ namespace OnlineShop.Services
             IQueryable<ShoppingCartItem> shoppingCartItem = _repository.GetAll<ShoppingCartItem>();
 
             return shoppingCartItem
-                .Select(x => new CartItemViewModel
-                {
-                    Id = x.Id,
-                    Name = x.Product.Name,
-                    UnitPrice = x.Product.UnitPrice,
-                    Description = x.Product.Description,
-                    Quantity = x.Quantity,
-                    ShoppingCartId = x.ShoppingCartId,
-                    ProductId = x.ProductId
-                })
+                .ProjectTo<CartItemViewModel>(_mapper.ConfigurationProvider)
                 .ToList();
-        }
-
-        public PagedViewModel<CartItemViewModel> GetProducts(int pageNumber, int pageSize, long userId)
-        {
-            IQueryable<ShoppingCartItem> queryable = _repository.GetAll<ShoppingCartItem>()
-                        .Where(x => x.ShoppingCart.UserId == userId);
-
-            var count = queryable.Count();
-
-            var result = queryable
-                .Select(x => new CartItemViewModel
-                {
-                    Id = x.Id,
-                    Name = x.Product.Name,
-                    UnitPrice = x.Product.UnitPrice,
-                    Description = x.Product.Description,
-                    Quantity = x.Quantity,
-                    ShoppingCartId = x.ShoppingCartId,
-                    ProductId = x.ProductId
-                })
-                .Paged(pageNumber, pageSize);
-
-            return result;
         }
 
         public void UpdateCartItemQuantity(QuantityCartItemViewModel cartItem)
@@ -106,7 +75,7 @@ namespace OnlineShop.Services
             }
             else
             {
-                item = mapper.Map<ShoppingCartItem>(cartItem);
+                item = _mapper.Map<ShoppingCartItem>(cartItem);
                 item.ShoppingCartId = currentUserCart;
                 _repository.Add(item);
                 _repository.Save();
@@ -127,7 +96,8 @@ namespace OnlineShop.Services
                 .Where(x => x.UserId == userId)
                 .FirstOrDefault();
 
-            var cartItems = _repository.GetAll<ShoppingCartItem>().Where(x => x.ShoppingCartId == cart.Id);
+            var cartItems = _repository.GetAll<ShoppingCartItem>()
+                .Where(x => x.ShoppingCartId == cart.Id);
 
             foreach (var item in cartItems)
             {

@@ -11,12 +11,10 @@ namespace OnlineShop.Api.Controllers
     [Route("api/[controller]")]
     public class ProductController : Controller
     {
-        private readonly IMapper _mapper;
         private IProductService _productService;
 
-        public ProductController(IMapper mapper, IProductService productService)
+        public ProductController(IProductService productService)
         {
-            _mapper = mapper;
             _productService = productService;
         }
 
@@ -24,22 +22,19 @@ namespace OnlineShop.Api.Controllers
         [HttpGet("categoriesAndSubCategories")]        
         public IEnumerable<CategoryAndSubCategoryViewModel> GetProductCategoriesAndSubCategories()
         {
-            IEnumerable < CategoryAndSubCategoryViewModel > categories = _productService.GetProductCategoriesAndSubCategories();
-            return categories;
+            return _productService.GetProductCategoriesAndSubCategories();
         }
 
         [HttpGet("categories/{category}")]
         public IEnumerable<CategoryViewModel> GetProductCategories(string category)
         {
-            IEnumerable<CategoryViewModel> categories = _productService.GetProductCategories(category);
-            return categories;
+            return _productService.GetProductCategories(category);
         }
 
         [HttpGet("subCategories/{subCategory}")]
         public IEnumerable<SubCategoryViewModel> GetProductSubCategories(string subCategory)
         {
-            IEnumerable<SubCategoryViewModel> subCategories = _productService.GetProductSubCategories(subCategory);
-            return subCategories;
+            return _productService.GetProductSubCategories(subCategory);
         }
 
         [HttpGet("{category}/{subCategory}")]
@@ -70,20 +65,23 @@ namespace OnlineShop.Api.Controllers
 
         [HttpPatch("{id}")]
         public IActionResult PartialUpdateProduct([FromBody] ProductViewModel productViewModel, long id)
-        {
-            var product = _mapper.Map<ProductViewModel, Product>(productViewModel);
-            _productService.UpdateProduct(product);
-
-            return Json(product);
+        {            
+            _productService.UpdateProduct(productViewModel);
+            return Json(productViewModel);
         }
 
-        //POST api/values
+        [HttpGet("mostShipped/{pageNumber}/{pageSize}")]
+        public PagedViewModel<ProductViewModel> GetMostShipped(int pageNumber, int pageSize)
+        {
+            return _productService.GetMostShippedProducts(pageNumber, pageSize);
+        }
+        
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Create([FromBody]ProductViewModel productViewModel)
         {
-            var product = _mapper.Map<ProductViewModel, Product>(productViewModel);
-            _productService.CreateProduct(product);
+            _productService.CreateProduct(productViewModel);
             return Json(productViewModel);
         }
 

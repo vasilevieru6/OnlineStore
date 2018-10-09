@@ -8,5 +8,6 @@ namespace OnlineShop.Services
     public interface IOrderService
     {
         void Create(OrderViewModel orderViewModel, long userId);
+        IList<OrderInfoViewModel> GetOrders(long userId);
     }
 }

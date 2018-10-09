@@ -15,11 +15,9 @@ namespace OnlineShop.Api.Controllers
     [Authorize]
     public class CartController : Controller
     {
-        private readonly IMapper _mapper;
         private ICartService _cartService;
-        public CartController(ICartService cartService, IMapper mapper)
+        public CartController(ICartService cartService)
         {
-            _mapper = mapper;
             _cartService = cartService;
         }
 
@@ -39,17 +37,10 @@ namespace OnlineShop.Api.Controllers
             return Json(quantityCartItemViewModel);
         }
 
-        [HttpGet("products/{pageNumber}/{pageSize}")]
-        public PagedViewModel<CartItemViewModel> GetProductsFromCart(int pageNumber, int pageSize)
-        {
-            return _cartService.GetProducts(pageNumber, pageSize, this.UserId);
-
-        }
-
         [HttpPost("product")]
         public IActionResult CreateCartItem([FromBody] QuantityCartItemViewModel cartItemViewModel)
         {
-            _cartService.AddProductToCart(cartItemViewModel, this.UserId);
+            _cartService.AddProductToCart(cartItemViewModel, UserId);
             return Json(cartItemViewModel);
         }
 
