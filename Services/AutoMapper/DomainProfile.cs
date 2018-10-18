@@ -27,6 +27,7 @@ namespace OnlineShop.Services.AutoMapper
                 .ForMember(x => x.OrderDate, y => y.MapFrom(x => x.OrderDate))
                 .ForMember(x => x.TotalAmount, y => y.MapFrom(x => x.TotalAmount))
                 .ForMember(x => x.Address, y => y.MapFrom(x => x.Address));
+            CreateMap<PhotoViewModel, Photo>().ReverseMap();
         }
     }
 }

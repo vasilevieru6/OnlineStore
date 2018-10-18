@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace OnlineShop.Services.ViewMoldels
 {
@@ -9,8 +7,8 @@ namespace OnlineShop.Services.ViewMoldels
         public string Name { get; set; }
         public int UnitPrice { get; set; }
         public string Description { get; set; }
-        public string PhotoUrl { get; set; }
         public string Category { get; set; }
         public string SubCategory { get; set; }
+        public ICollection<PhotoViewModel> Photos { get; set; }
     }
 }

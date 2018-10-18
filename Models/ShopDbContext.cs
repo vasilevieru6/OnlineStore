@@ -20,7 +20,7 @@ namespace OnlineShop.Models
         public DbSet<ProductCharacteristics> ProductCharacteristics { get; set; }
         public DbSet<ShoppingCart> ShoppingCarts { get; set; }
         public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; }
-        //public DbSet<User> Users { get; set; }
+        public DbSet<Photo>  Photos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

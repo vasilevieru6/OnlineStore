@@ -12,10 +12,6 @@ namespace OnlineShop.Models.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            builder.Property(x => x.PhotoUrl)
-                .IsRequired()
-                .HasMaxLength(100);
-
             builder.Property(x => x.Category)
                 .IsRequired()
                 .HasMaxLength(30);
